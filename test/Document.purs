@@ -1,17 +1,19 @@
 module Test.Document (documentTest) where
 
-import Libxml
+import Libxml.Document
+import Libxml.Element
 import Prelude
 
-import Data.Array (head, length, unsafeIndex)
+import Data.Array (head, length)
 import Data.Either (Either(..), fromRight)
-import Data.Functor (mapFlipped, (<$>))
-import Data.Maybe (Maybe(..), fromJust, fromMaybe, fromMaybe', isNothing)
-import Data.Traversable (for, sequence, traverse)
+import Data.Maybe (Maybe(..), fromJust, fromMaybe, isNothing)
+import Data.Traversable (sequence, traverse)
 import Effect.Class (liftEffect)
-import Effect.Console (log)
+import Libxml (parseXmlString)
+import Libxml.DTD (dtdExternalId, dtdName, dtdSystemId)
+import Libxml.Node (asElement, nodeParent)
 import Partial.Unsafe (unsafePartial)
-import Test.Unit (TestSuite, failure, suite, suiteSkip, test, testSkip)
+import Test.Unit (TestSuite, failure, suite, suiteSkip, test)
 import Test.Unit.Assert as Assert
 
 
