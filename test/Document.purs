@@ -9,6 +9,7 @@ import Data.Either (Either(..), fromRight)
 import Data.Maybe (Maybe(..), fromJust, fromMaybe, isNothing)
 import Data.Traversable (sequence, traverse)
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Libxml (parseXmlString)
 import Libxml.DTD (dtdExternalId, dtdName, dtdSystemId)
 import Libxml.Node (asElement, nodeParent)
@@ -136,15 +137,16 @@ newDocument = suite "new document" do
     Assert.equal (Just "root") rootName'
 
   test "root children" do
-    doc <- liftEffect $ newDoc defaultDocEncodingAndVersion
-    root <- liftEffect $ docCreateRoot "root" "" doc
-    root' <- liftEffect $ nodeParent =<< elementAddNode "child-one" "" root
-    case asElement =<< root' of
-      Nothing -> failure "parent of child of root should be root"
-      Just r -> void $ liftEffect $ elementAddNode "child-two" "" r
-    children <- liftEffect $ docChildNodes doc
-    childNames <- children # map (asElement >>> map elementName >>> fromMaybe (pure "")) # sequence # liftEffect
-    Assert.equal ["child-one", "child-two"] childNames
+    names <- liftEffect do
+      doc <- newDoc defaultDocEncodingAndVersion
+      root <- docCreateRoot "root" "" doc
+      child1 <- elementAddNode "child-one" "" root
+      root' <- unsafePartial $ (fromJust <<< (=<<) asElement) <$> nodeParent child1
+      _ <- elementAddNode "child-two" "" root'
+      children <- docChildNodes doc
+      sequence $ (sequence <<< map elementName <<< asElement) <$> children
+
+    Assert.equal (map Just ["child-one", "child-two"]) names
 
   test "xpath" do
     doc <- liftEffect do
@@ -197,9 +199,9 @@ newDocument = suite "new document" do
 <root><child to="wongfoo"></child><sibling>with content!</sibling></root>
 """
     liftEffect do
-      doc2Child0 <- unsafePartial $ doc2 # docChildNodes <#> head <#> fromJust <#> asElement <#> fromJust
-      doc1Child0 <- unsafePartial $ doc1 # docChildNodes <#> head <#> fromJust <#> asElement <#> fromJust
-      doc1Child00 <- unsafePartial $ doc1Child0 # elementChildNodes <#> head <#> fromJust <#> asElement <#> fromJust
+      doc2Child0 <- unsafePartial $ (fromJust <<< (=<<) asElement <<< head) <$> docChildNodes doc2
+      doc1Child0 <- unsafePartial $ (fromJust <<< (=<<) asElement <<< head) <$> docChildNodes doc1
+      doc1Child00 <- unsafePartial $ (fromJust <<< (=<<) asElement <<< head) <$> elementChildNodes doc1Child0
       elementAddChild doc1Child00 doc2Child0
     doc1String <- liftEffect $ docToString doc1
     doc2String <- liftEffect $ docToString doc2
