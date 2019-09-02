@@ -3,6 +3,7 @@ module Libxml.Document
        , defaultDocEncodingAndVersion
        , newDoc
        , docGetRoot
+       , docSetRoot
        , docCreateRoot
        , docFind
        , docEncoding

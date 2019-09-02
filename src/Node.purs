@@ -1,6 +1,8 @@
 module Libxml.Node
        ( nodeType
        , nodeParent
+       , nodeRemove
+       , nodeToString
        , asElement
        )
 where

@@ -2,6 +2,7 @@
 
 const libxmljs = require('libxmljs');
 
+exports._newElement = (doc, name, content) => new libxmljs.Element(doc, name, content);
 exports.elementAddNode = name => content => element => () => element.node(name, content);
 exports.elementName = element => () => element.name();
 exports.elementSetName = name => element => () => element.name(name);
