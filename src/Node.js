@@ -11,3 +11,4 @@ exports.nodeLine = node => () => node.line();
 exports.nodeRemove = node => () => node.remove();
 exports.nodeClone = node => () => node.clone();
 exports.nodeToString = node => () => node.toString();
+exports.nodeIs = a => b => () => a == b;

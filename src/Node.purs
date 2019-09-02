@@ -1,8 +1,11 @@
 module Libxml.Node
        ( nodeType
        , nodeParent
+       , nodeDoc
        , nodeRemove
        , nodeToString
+       , nodeClone
+       , nodeIs
        , asElement
        )
 where
@@ -26,6 +29,7 @@ foreign import nodeLine :: forall a. Node a -> Effect Int
 foreign import nodeRemove :: forall a. Node a -> Effect Unit
 foreign import nodeClone :: forall a. Node a -> Effect (Node a)
 foreign import nodeToString :: forall a. Node a -> Effect String
+foreign import nodeIs :: forall a b. Node a -> Node b -> Effect Boolean
 
 nextSibling :: forall a. Node a -> Effect (Maybe (Node Unit))
 nextSibling n = toMaybe <$> _nextSibling n

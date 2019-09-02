@@ -6,11 +6,16 @@ import Libxml.Node
 import Libxml.Types
 import Prelude
 
-import Data.Array (index, length)
-import Data.Maybe (Maybe(..))
-import Data.Traversable (sequence)
+import Data.Array (head, index, length)
+import Data.Either (fromRight)
+import Data.Maybe (Maybe(..), fromJust)
+import Data.Traversable (sequence, traverse)
 import Effect.Class (liftEffect)
-import Test.Unit (TestSuite, test)
+import Effect.Console (log)
+import Libxml (parseXmlString)
+import Libxml.Text (newText, textGetText)
+import Partial.Unsafe (unsafePartial)
+import Test.Unit (TestSuite, failure, suite, test, testSkip)
 import Test.Unit.Assert as Assert
 
 elementTest :: TestSuite
@@ -140,3 +145,108 @@ elementTest = do
     Assert.equal 3 $ length children
     let node = asElement =<< index children 1
     Assert.equal (Just "next-sibling") =<< (liftEffect $ sequence $ elementName <$> node)
+
+  test "import" do
+    doc <- liftEffect $ newDoc defaultDocEncodingAndVersion {encoding = "latin1"}
+    elem <- liftEffect $ docCreateRoot "name1" "" doc
+    child1 <- liftEffect $ elementAddNode "child1" "" elem
+    doc' <- liftEffect $ unsafePartial $ fromJust <$> nodeDoc child1
+    newdoc <- liftEffect $ newDoc defaultDocEncodingAndVersion
+    _ <- liftEffect $ docCreateRoot "newdoc" "" newdoc
+    liftEffect $ elementAddChild child1 =<< unsafePartial fromJust <$> docGetRoot newdoc
+    doc'Encoding <- liftEffect $ docEncoding doc'
+    newdocEncoding <- liftEffect $ docEncoding newdoc
+    Assert.assertFalse "the docs should be different" $ doc'Encoding == newdocEncoding
+    child1' <- liftEffect $ unsafePartial $ fromJust <$> head <$>
+               (elementChildNodes =<<  fromJust <$> docGetRoot newdoc)
+    Assert.equal (Just "child1") =<<
+      (liftEffect $ sequence $ elementName <$> asElement child1')
+    child1parentName <- liftEffect do
+      p <- ((=<<) asElement) <$> nodeParent child1
+      traverse elementName p
+    Assert.equal (Just "name1") child1parentName
+
+  test "clone" do
+    doc <- liftEffect $ newDoc defaultDocEncodingAndVersion
+    elem <- liftEffect $ docCreateRoot "child" "content" doc
+    elem2 <- liftEffect $ nodeClone elem
+
+    namesEqual <- liftEffect do
+      elemName <- elementName elem
+      elem2Name <- elementName elem2
+      pure $ elemName == elem2Name
+    Assert.assert "names are equal" namesEqual
+
+    textsEqual <- liftEffect do
+      text <- elementText elem
+      text2 <- elementText elem2
+      pure $ text == text2
+    Assert.assert "text content are equal" textsEqual
+
+    stringsEqual <- liftEffect do
+      string <- nodeToString elem
+      string2 <- nodeToString elem2
+      pure $ string == string2
+    Assert.assert "toStrings are equal" stringsEqual
+
+  testSkip "namespace" do
+    failure "not implemented"
+
+  suite "replace" do
+    let xml = "<foo>some <bar/> evening</foo>"
+
+    test "with text" do
+      docText <- liftEffect do
+        doc <- unsafePartial fromRight <$> parseXmlString xml
+        bar <- unsafePartial fromJust <$> ((=<<) asElement) <$> head <$> docFind "bar" doc
+        elementReplaceWithText "enchanted" bar
+        root <- unsafePartial fromJust <$> docGetRoot doc
+        elementText root
+      Assert.equal "some enchanted evening" docText
+
+    test "escaped text" do
+      asString <- liftEffect do
+        doc <- unsafePartial fromRight <$> parseXmlString xml
+        bar <- unsafePartial fromJust <$> ((=<<) asElement) <$> head <$> docFind "bar" doc
+        elementReplaceWithText "<>" bar
+        root <- unsafePartial fromJust <$> docGetRoot doc
+        nodeToString root
+      Assert.equal "<foo>some &lt;&gt; evening</foo>" asString
+
+    test "with other element" do
+      root <- liftEffect do
+        doc <- unsafePartial fromRight <$> parseXmlString xml
+        bar <- unsafePartial fromJust <$> ((=<<) asElement) <$> head <$> docFind "bar" doc
+        enchant <- unsafePartial fromRight <$> parseXmlString "<enchanted/>"
+        enchantedRoot <- unsafePartial fromJust <$> docGetRoot enchant
+        elementReplaceWithElement enchantedRoot bar
+        unsafePartial fromJust <$> docGetRoot doc
+
+      Assert.equal "<foo>some <enchanted/> evening</foo>" =<<
+        (liftEffect $ nodeToString root)
+
+      Assert.equal 3 =<< (liftEffect $ length <$> elementChildNodes root)
+
+      Assert.equal "enchanted" =<< liftEffect do
+        children <- elementChildNodes root
+        elementName $ unsafePartial fromJust $ asElement =<< index children 1
+
+  test "add child merge text" do
+    doc <- liftEffect $ unsafePartial fromRight <$> parseXmlString "<foo>bar</foo>"
+    foo <- liftEffect $ unsafePartial fromJust <$> docGetRoot doc
+    baz <- liftEffect $ newText "baz" doc
+    liftEffect $ elementAddChild baz foo
+
+    Assert.equal "barbaz" =<< (liftEffect $ elementText foo)
+    Assert.equal 1 =<< (liftEffect $ length <$> elementChildNodes foo)
+
+    Assert.assertFalse "baz should not be child of foo" =<< liftEffect do
+      fooChild <- unsafePartial fromJust <$> head <$> elementChildNodes foo
+      nodeIs fooChild baz
+
+    -- Assert.assert "doc should be parent of baz" =<< liftEffect do
+    --   bazParent <- unsafePartial fromJust <$> nodeParent baz
+    --   nodeIs bazParent doc -- Document is not a type of node!
+
+    Assert.equal "baz" =<< (liftEffect $ textGetText baz)
+
