@@ -2,6 +2,7 @@ module Libxml.Element
        ( newElement
        , elementAddNode
        , elementAttr
+       , elementAttrs
        , elementSetAttr
        , elementAddChild
        , elementChildNodes
