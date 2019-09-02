@@ -6,7 +6,10 @@ module Libxml.Node
        , nodeToString
        , nodeClone
        , nodeIs
+       , prevSibling
+       , nextSibling
        , asElement
+       , asAttribute
        )
 where
 

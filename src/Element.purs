@@ -1,6 +1,7 @@
 module Libxml.Element
        ( newElement
        , elementAddNode
+       , elementAttr
        , elementSetAttr
        , elementAddChild
        , elementChildNodes
@@ -16,12 +17,14 @@ module Libxml.Element
        )
 where
 
+import Prelude
 import Libxml.Types
 
-import Data.Nullable (Nullable)
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn3, runEffectFn3)
-import Prelude (Unit)
+
 
 foreign import _newElement :: EffectFn3 Document String String Element
 foreign import elementAddNode :: String -> String -> Element -> Effect Element
@@ -45,3 +48,6 @@ foreign import elementPath :: Element -> Effect String
 
 newElement :: Document -> String -> String -> Effect Element
 newElement doc name content = runEffectFn3 _newElement doc name content
+
+elementAttr :: String -> Element -> Effect (Maybe Attribute)
+elementAttr name elem = toMaybe <$> _elementAttr name elem

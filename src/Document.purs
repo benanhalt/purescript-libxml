@@ -6,6 +6,7 @@ module Libxml.Document
        , docSetRoot
        , docCreateRoot
        , docFind
+       , docGetElement
        , docEncoding
        , docVersion
        , docToString
@@ -15,14 +16,16 @@ module Libxml.Document
        )
 where
 
-import Prelude (Unit, void, ($), (<$>))
 import Libxml.Types
+import Prelude
 
-
+import Data.Array (head)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
+import Libxml.Node (asElement)
+import Prelude (Unit, void, ($), (<$>))
 
 
 type DocEncodingAndVersion = {encoding :: String, version :: String}
@@ -57,4 +60,9 @@ docSetRoot root document = void $ runEffectFn2 _docSetRoot root document
 
 docGetDtd :: Document -> Effect (Maybe DTD)
 docGetDtd document = toMaybe <$> runEffectFn1 _docGetDtd document
+
+docGetElement :: String -> Document -> Effect (Maybe Element)
+docGetElement xpath doc = do
+  maybeNode <- head <$> docFind xpath doc
+  pure $ asElement =<< maybeNode
 
