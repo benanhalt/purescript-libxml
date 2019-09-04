@@ -15,16 +15,20 @@ module Libxml.Element
        , elementReplaceWithElement
        , elementReplaceWithText
        , elementPath
+       , elementFind
+       , elementGetElement
        )
 where
 
-import Prelude
 import Libxml.Types
+import Prelude
 
+import Data.Array (head)
 import Data.Maybe (Maybe)
 import Data.Nullable (Nullable, toMaybe)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn3, runEffectFn3)
+import Libxml.Node (asElement)
 
 
 foreign import _newElement :: EffectFn3 Document String String Element
@@ -52,3 +56,8 @@ newElement doc name content = runEffectFn3 _newElement doc name content
 
 elementAttr :: String -> Element -> Effect (Maybe Attribute)
 elementAttr name elem = toMaybe <$> _elementAttr name elem
+
+elementGetElement :: String -> Element -> Effect (Maybe Element)
+elementGetElement xpath elem = do
+  maybeNode <- head <$> elementFind xpath elem
+  pure $ asElement =<< maybeNode
