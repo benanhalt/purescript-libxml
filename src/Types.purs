@@ -17,6 +17,7 @@ module Libxml.Types
        , RawCDataNode
        , RawPINode
        , NodeType(..)
+       , XPathResult(..)
        )
 where
 
@@ -50,3 +51,8 @@ derive instance eqNodeType :: Eq NodeType
 derive instance genericNodeType :: Generic NodeType _
 instance showNodeType :: Show NodeType where
   show = genericShow
+
+data XPathResult = NodeSet (Array (Node Unit))
+                 | StringResult String
+                 | NumberResult Number
+                 | BoolResult Boolean

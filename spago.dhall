@@ -10,6 +10,7 @@ You can edit this file as you like.
 	, "console"
 	, "exceptions"
 	, "nullable"
+	, "foreign"
 	, "generics-rep"
 	, "psci-support"
 	, "test-unit"

@@ -17,7 +17,7 @@ exports._elementNextElement = element => () => element.nextElement();
 exports._elementPrevElement = element => () => element.prevElement();
 exports.elementAddNextSibling = siblingNode => element => () => element.addNextSibling(siblingNode);
 exports.elementAddPrevSibling = siblingNode => element => () => element.addPrevSibling(siblingNode);
-exports.elementFind = xpath => element => () => element.find(xpath);
+exports._elementFind = xpath => element => () => element.find(xpath);
 exports.elementReplaceWithElement = replacement => element => () => element.replace(replacement);
 exports.elementReplaceWithText = text => element => () => element.replace(text);
 exports.elementPath = element => () => element.path();
