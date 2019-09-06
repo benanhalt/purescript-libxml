@@ -8,7 +8,7 @@ import Prelude
 
 import Data.Array (head, index, length)
 import Data.Either (fromRight)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..), fromJust, isJust, isNothing)
 import Data.Traversable (sequence, traverse)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -70,14 +70,15 @@ elementTest = do
     elem <- liftEffect $ docCreateRoot "name1" "" doc
     child <- liftEffect $ elementAddNode "child" "" elem
 
-    children <- liftEffect $ docFind "/name1/child" doc
-    Assert.equal 1 $ length children
+    Assert.assert "element should be found" =<< liftEffect do
+      el <- docGetElement "/name1/child" doc
+      pure $ isJust el
 
     liftEffect $ nodeRemove child
 
-    children' <- liftEffect $ docFind "/name1/child" doc
-    Assert.equal 0 $ length children'
-
+    Assert.assert "element should not be found" =<< liftEffect do
+      el <- docGetElement "/name1/child" doc
+      pure $ isNothing el
 
   test "toString" do
     doc <- liftEffect $ newDoc defaultDocEncodingAndVersion
@@ -101,13 +102,19 @@ elementTest = do
     doc <- liftEffect $ newDoc defaultDocEncodingAndVersion
     elem <- liftEffect $ docCreateRoot "name1" "" doc
     child <- liftEffect $ elementAddNode "child" "" elem
-    Assert.equal 1 =<< (liftEffect $ length <$> docFind "/name1/child" doc)
+    Assert.assert "element 'child' should be found under 'name1'" =<< liftEffect do
+      el <- docGetElement "/name1/child" doc
+      pure $ isJust el
 
     liftEffect $ nodeRemove child
     name2 <- liftEffect $ elementAddNode "name2" "" elem
     liftEffect $ elementAddChild child name2
-    Assert.equal 0 =<< (liftEffect $ length <$> docFind "/name1/child" doc)
-    Assert.equal 1 =<< (liftEffect $ length <$> docFind "/name1/name2/child" doc)
+    Assert.assert "element 'child' should not be found under 'name1'" =<< liftEffect do
+      el <- docGetElement "/name1/child" doc
+      pure $ isNothing el
+    Assert.assert "element 'child' should be found under 'name2'" =<< liftEffect do
+      el <- docGetElement "/name1/name2/child" doc
+      pure $ isJust el
 
   test "add child" do
     doc <- liftEffect do
@@ -116,7 +123,9 @@ elementTest = do
       newChild <- newElement doc "new-child" ""
       elementAddChild newChild elem
       pure doc
-    Assert.equal 1 =<< (liftEffect $ length <$> docFind "/name1/new-child" doc)
+    Assert.assert "new element should be found" =<< liftEffect do
+      el <- docGetElement "/name1/new-child" doc
+      pure $ isJust el
 
   test "add prev sibling" do
     doc <- liftEffect $ newDoc defaultDocEncodingAndVersion
@@ -198,7 +207,7 @@ elementTest = do
     test "with text" do
       docText <- liftEffect do
         doc <- unsafePartial fromRight <$> parseXmlString xml
-        bar <- unsafePartial fromJust <$> ((=<<) asElement) <$> head <$> docFind "bar" doc
+        bar <- unsafePartial fromJust <$> docGetElement "bar" doc
         elementReplaceWithText "enchanted" bar
         root <- unsafePartial fromJust <$> docGetRoot doc
         elementText root
@@ -207,7 +216,7 @@ elementTest = do
     test "escaped text" do
       asString <- liftEffect do
         doc <- unsafePartial fromRight <$> parseXmlString xml
-        bar <- unsafePartial fromJust <$> ((=<<) asElement) <$> head <$> docFind "bar" doc
+        bar <- unsafePartial fromJust <$> docGetElement "bar" doc
         elementReplaceWithText "<>" bar
         root <- unsafePartial fromJust <$> docGetRoot doc
         nodeToString root
@@ -216,7 +225,7 @@ elementTest = do
     test "with other element" do
       root <- liftEffect do
         doc <- unsafePartial fromRight <$> parseXmlString xml
-        bar <- unsafePartial fromJust <$> ((=<<) asElement) <$> head <$> docFind "bar" doc
+        bar <- unsafePartial fromJust <$> docGetElement "bar" doc
         enchant <- unsafePartial fromRight <$> parseXmlString "<enchanted/>"
         enchantedRoot <- unsafePartial fromJust <$> docGetRoot enchant
         elementReplaceWithElement enchantedRoot bar

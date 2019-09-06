@@ -13,6 +13,7 @@ import Effect.Console (log)
 import Libxml (parseXmlString)
 import Libxml.DTD (dtdExternalId, dtdName, dtdSystemId)
 import Libxml.Node (asElement, nodeParent)
+import Libxml.Types (XPathResult(..))
 import Partial.Unsafe (unsafePartial)
 import Test.Unit (TestSuite, failure, suite, suiteSkip, test)
 import Test.Unit.Assert as Assert
@@ -133,7 +134,8 @@ newDocument = suite "new document" do
           void $ liftEffect $ elementAddNode "child" "" parentElement
     rootName <- liftEffect $ traverse elementName =<< docGetRoot doc
     Assert.equal (Just "root") rootName
-    rootName' <- liftEffect ((traverse elementName <<< head) =<< docFind "/root" doc)
+    -- rootName' <- liftEffect ((traverse elementName <<< head) =<< docFind "/root" doc)
+    rootName' <- liftEffect $ traverse elementName =<< docGetElement "/root" doc
     Assert.equal (Just "root") rootName'
 
   test "root children" do
@@ -155,7 +157,9 @@ newDocument = suite "new document" do
       child1 <- elementAddNode "child" "" root
       child2 <- elementAddNode "child" "" root
       pure doc
-    children <- liftEffect $ docFind "child" doc
+    children <- liftEffect $ unsafePartial do
+      (Just (NodeSet nodes)) <- docFind "child" doc
+      pure nodes
     Assert.equal 2 $ length children
 
   test "xpath child" do
@@ -165,9 +169,15 @@ newDocument = suite "new document" do
       _ <- elementAddNode "child-one" "" root
       _ <- elementAddNode "child-two" "" root
       pure doc
-    child1Name <- liftEffect $ docFind "child-one" doc >>= map elementName >>> sequence <#> head
+
+    child1Name <- liftEffect $ unsafePartial do
+      (Just (NodeSet nodes)) <- docFind "child-one" doc
+      sequence $ elementName <$> (asElement =<< head nodes)
     Assert.equal (Just "child-one") child1Name
-    child2Name <- liftEffect $ docFind "child-two" doc >>= map elementName >>> sequence <#> head
+
+    child2Name <- liftEffect $ unsafePartial do
+      (Just (NodeSet nodes)) <- docFind "child-two" doc
+      sequence $ elementName <$> (asElement =<< head nodes)
     Assert.equal (Just "child-two") child2Name
 
   test "toString" do

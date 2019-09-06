@@ -3,16 +3,14 @@ module Test.Searching (searchingTest) where
 import Libxml.Types
 import Prelude
 
-import Data.Array (length, zipWith)
-import Data.Maybe (fromJust, isNothing)
-import Data.Traversable (for_, sequence)
+import Data.Array (length)
+import Data.Maybe (Maybe(..), fromJust)
 import Effect.Class (liftEffect)
-import Libxml.Attribute (attrValue)
 import Libxml.Document (defaultDocEncodingAndVersion, docCreateRoot, docFind, docGetElement, newDoc)
 import Libxml.Element (elementAddChild, elementAddNode, elementAttr, elementAttrs, elementGetElement, elementSetAttr)
 import Libxml.Node (nextSibling, nodeIs, nodeParent, prevSibling)
 import Partial.Unsafe (unsafePartial)
-import Test.Unit (TestSuite, test)
+import Test.Unit (TestSuite, failure, test)
 import Test.Unit.Assert as Assert
 
 
@@ -39,6 +37,8 @@ searchingTest = do
       root <- docCreateRoot "root" "" doc
       pure doc
 
-    Assert.equal 0 =<< liftEffect do
-      missing <- docFind "missing/text()" doc
-      pure $ length missing
+    nodes <- liftEffect $ unsafePartial do
+      (Just (NodeSet nodes)) <- docFind "missing/text()" doc
+      pure $ nodes
+
+    Assert.equal 0 $ length nodes

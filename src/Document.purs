@@ -20,10 +20,13 @@ import Libxml.Types
 import Prelude
 
 import Data.Array (head)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
+import Data.Traversable (sequence, traverse)
 import Effect (Effect)
+import Effect.Console (log)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
+import Libxml.Element (elementFind, elementGetElement)
 import Libxml.Node (asElement)
 import Prelude (Unit, void, ($), (<$>))
 
@@ -40,7 +43,7 @@ foreign import docVersion :: Document -> Effect String
 foreign import docSetEncoding :: String -> Document -> Effect Unit
 foreign import docToString :: Document -> Effect String
 foreign import docValidate :: Document -> Document -> Effect Unit
-foreign import docFind :: String -> Document -> Effect (Array Element)
+-- foreign import docFind :: String -> Document -> Effect (Array Element)
 foreign import _docNode :: EffectFn3 String String Document Element
 foreign import _docRoot :: EffectFn1 Document (Nullable Element)
 foreign import _docSetRoot :: EffectFn2 Element Document Element
@@ -62,7 +65,11 @@ docGetDtd :: Document -> Effect (Maybe DTD)
 docGetDtd document = toMaybe <$> runEffectFn1 _docGetDtd document
 
 docGetElement :: String -> Document -> Effect (Maybe Element)
-docGetElement xpath doc = do
-  maybeNode <- head <$> docFind xpath doc
-  pure $ asElement =<< maybeNode
+docGetElement xpath doc = docGetRoot doc >>= case _ of
+  Nothing -> pure Nothing
+  Just root -> elementGetElement xpath root
 
+docFind :: String -> Document -> Effect (Maybe XPathResult)
+docFind xpath doc = docGetRoot doc >>= case _ of
+  Nothing -> pure Nothing
+  Just root -> elementFind xpath root
