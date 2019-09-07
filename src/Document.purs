@@ -7,6 +7,7 @@ module Libxml.Document
        , docCreateRoot
        , docFind
        , docGetElement
+       , docGetAttr
        , docEncoding
        , docVersion
        , docToString
@@ -26,7 +27,7 @@ import Data.Traversable (sequence, traverse)
 import Effect (Effect)
 import Effect.Console (log)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
-import Libxml.Element (elementFind, elementGetElement)
+import Libxml.Element (elementFind, elementGetAttr, elementGetElement)
 import Libxml.Node (asElement)
 import Prelude (Unit, void, ($), (<$>))
 
@@ -68,6 +69,11 @@ docGetElement :: String -> Document -> Effect (Maybe Element)
 docGetElement xpath doc = docGetRoot doc >>= case _ of
   Nothing -> pure Nothing
   Just root -> elementGetElement xpath root
+
+docGetAttr :: String -> Document -> Effect (Maybe Attribute)
+docGetAttr xpath doc = docGetRoot doc >>= case _ of
+  Nothing -> pure Nothing
+  Just root -> elementGetAttr xpath root
 
 docFind :: String -> Document -> Effect (Maybe XPathResult)
 docFind xpath doc = docGetRoot doc >>= case _ of

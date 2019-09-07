@@ -17,6 +17,7 @@ module Libxml.Element
        , elementPath
        , elementFind
        , elementGetElement
+       , elementGetAttr
        )
 where
 
@@ -33,7 +34,7 @@ import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Uncurried (EffectFn3, runEffectFn3)
 import Foreign (F, Foreign, readArray, readBoolean, readNullOrUndefined, readNumber, readString, unsafeFromForeign)
-import Libxml.Node (asElement)
+import Libxml.Node (asAttribute, asElement)
 import Partial.Unsafe (unsafePartial)
 
 
@@ -63,15 +64,22 @@ newElement doc name content = runEffectFn3 _newElement doc name content
 elementAttr :: String -> Element -> Effect (Maybe Attribute)
 elementAttr name elem = toMaybe <$> _elementAttr name elem
 
+elementGetNode :: String -> Element -> Effect (Maybe (Node Unit))
+elementGetNode xpath elem = do
+  maybeResult <- elementFind xpath elem
+  pure case maybeResult of
+      (Just (NodeSet nodes)) -> head nodes
+      otherwise -> Nothing
+
 elementGetElement :: String -> Element -> Effect (Maybe Element)
 elementGetElement xpath elem = do
-  maybeResult <- elementFind xpath elem
-  pure do
-    result <- maybeResult
-    node <- case result of
-          NodeSet nodes -> head nodes
-          otherwise -> Nothing
-    asElement node
+  node <- elementGetNode xpath elem
+  pure $ asElement =<< node
+
+elementGetAttr :: String -> Element -> Effect (Maybe Attribute)
+elementGetAttr xpath elem = do
+  node <- elementGetNode xpath elem
+  pure $ asAttribute =<< node
 
 elementFind :: String -> Element -> Effect (Maybe XPathResult)
 elementFind xpath elem = do
