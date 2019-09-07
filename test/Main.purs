@@ -5,6 +5,7 @@ import Prelude
 
 import Effect (Effect)
 import Test.Attribute (attributeTest)
+import Test.Comment (commentTest)
 import Test.Document (documentTest)
 import Test.Element (elementTest)
 import Test.NodeAttribute (nodeAttributeTest)
@@ -20,3 +21,4 @@ main = runTest do
   suite "attribute tests" attributeTest
   suite "node attribute tests" nodeAttributeTest
   suite "search tests" searchingTest
+  suite "comment tests" commentTest
