@@ -47,7 +47,7 @@ foreign import docValidate :: Document -> Document -> Effect Unit
 -- foreign import docFind :: String -> Document -> Effect (Array Element)
 foreign import _docNode :: EffectFn3 String String Document Element
 foreign import _docRoot :: EffectFn1 Document (Nullable Element)
-foreign import _docSetRoot :: EffectFn2 Element Document Element
+foreign import _docSetRoot :: forall a. EffectFn2 (Node a) Document Element
 foreign import _docGetDtd :: EffectFn1 Document (Nullable DTD)
 
 newDoc :: DocEncodingAndVersion -> Effect Document
@@ -59,7 +59,7 @@ docCreateRoot name content document = runEffectFn3 _docNode name content documen
 docGetRoot :: Document -> Effect (Maybe Element)
 docGetRoot document = toMaybe <$> runEffectFn1 _docRoot document
 
-docSetRoot :: Element -> Document -> Effect Unit
+docSetRoot :: forall a. Node a -> Document -> Effect Unit
 docSetRoot root document = void $ runEffectFn2 _docSetRoot root document
 
 docGetDtd :: Document -> Effect (Maybe DTD)

@@ -48,11 +48,11 @@ foreign import _elementAttr :: String -> Element -> Effect (Nullable Attribute)
 foreign import elementSetAttr :: String -> String -> Element -> Effect Unit
 foreign import elementAttrs :: Element -> Effect (Array Attribute)
 foreign import elementChildNodes :: Element -> Effect (Array (RawNode Unit))
-foreign import elementAddChild :: forall a. RawNode a -> Element -> Effect Unit
+foreign import elementAddChild :: forall a. Node a -> Element -> Effect Unit
 foreign import _elementNextElement :: Element -> Effect (Nullable Element)
 foreign import _elementPrevElement :: Element -> Effect (Nullable Element)
-foreign import elementAddNextSibling :: Element -> Element -> Effect Unit
-foreign import elementAddPrevSibling :: Element -> Element -> Effect Unit
+foreign import elementAddNextSibling :: forall a. Node a -> Element -> Effect Unit
+foreign import elementAddPrevSibling :: forall a. Node a -> Element -> Effect Unit
 foreign import _elementFind :: String -> Element -> Effect Foreign
 foreign import elementReplaceWithElement :: Element -> Element -> Effect Unit
 foreign import elementReplaceWithText :: String -> Element -> Effect Unit

@@ -10,6 +10,7 @@ module Libxml.Node
        , nextSibling
        , asElement
        , asAttribute
+       , asText
        )
 where
 

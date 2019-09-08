@@ -10,6 +10,7 @@ import Test.Document (documentTest)
 import Test.Element (elementTest)
 import Test.NodeAttribute (nodeAttributeTest)
 import Test.Searching (searchingTest)
+import Test.Text (textTest)
 import Test.Unit (suite)
 import Test.Unit.Main (runTest)
 
@@ -22,3 +23,4 @@ main = runTest do
   suite "node attribute tests" nodeAttributeTest
   suite "search tests" searchingTest
   suite "comment tests" commentTest
+  suite "text tests" textTest
