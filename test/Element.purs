@@ -253,9 +253,9 @@ elementTest = do
       fooChild <- unsafePartial fromJust <$> head <$> elementChildNodes foo
       nodeIs fooChild baz
 
-    -- Assert.assert "doc should be parent of baz" =<< liftEffect do
-    --   bazParent <- unsafePartial fromJust <$> nodeParent baz
-    --   nodeIs bazParent doc -- Document is not a type of node!
+    Assert.assert "Nothing should be parent of baz" =<< liftEffect do
+      bazParent <- nodeParent baz
+      pure $ isNothing bazParent
 
     Assert.equal "baz" =<< (liftEffect $ textGetText baz)
 
