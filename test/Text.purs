@@ -9,13 +9,12 @@ import Data.Maybe (Maybe(..), fromJust, isNothing)
 import Data.Traversable (sequence)
 import Effect.Class (liftEffect)
 import Libxml (parseXmlString)
-
 import Libxml.Document (defaultDocEncodingAndVersion, docChildNodes, docSetRoot, docToString, newDoc)
 import Libxml.Element (elementAddChild, elementAddNextSibling, elementAddNode, elementAddPrevSibling, newElement)
 import Libxml.Node (asText, nodeIs, nodeParent, nodeRemove, nodeToString, nodeType)
 import Libxml.Text (newText, textAddNextSibling, textAddPrevSibling, textGetText, textSetText)
 import Partial.Unsafe (unsafePartial)
-import Test.Unit (TestSuite, test)
+import Test.Unit (TestSuite, suite, test)
 import Test.Unit.Assert as Assert
 
 
@@ -136,3 +135,22 @@ textTest = do
       pure $ isNothing parent
 
     Assert.equal "qux" =<< liftEffect (textGetText qux)
+
+  suite "text node" do
+    test "text" $ unsafePartial do
+      doc <- liftEffect $ fromRight <$> parseXmlString "<?xml version=\"1.0\"?><root>child</root>"
+      Assert.equal Text =<< liftEffect do
+        (Just child0) <- head <$> docChildNodes doc
+        pure $ nodeType child0
+
+    test "comment" $ unsafePartial do
+      doc <- liftEffect $ fromRight <$> parseXmlString "<?xml version=\"1.0\"?><root><!-- comment --></root>"
+      Assert.equal Comment =<< liftEffect do
+        (Just child0) <- head <$> docChildNodes doc
+        pure $ nodeType child0
+
+    test "cdata" $ unsafePartial do
+      doc <- liftEffect $ fromRight <$> parseXmlString "<?xml version=\"1.0\"?><root><![CDATA[cdata text]]></root>"
+      Assert.equal CData =<< liftEffect do
+        (Just child0) <- head <$> docChildNodes doc
+        pure $ nodeType child0
