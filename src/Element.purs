@@ -16,8 +16,17 @@ module Libxml.Element
        , elementReplaceWithText
        , elementPath
        , elementFind
+       , elementFindWithNS
        , elementGetElement
        , elementGetAttr
+       , elementDefineNS
+       , elementDefineNSwithPrefix
+       , elementNS
+       , elementSetNS
+       , elementSetNShref
+       , elementSetNShrefWithPrefix
+       , elementClearNS
+       , elementAllNS
        )
 where
 
@@ -54,9 +63,19 @@ foreign import _elementPrevElement :: Element -> Effect (Nullable Element)
 foreign import elementAddNextSibling :: forall a. Node a -> Element -> Effect Unit
 foreign import elementAddPrevSibling :: forall a. Node a -> Element -> Effect Unit
 foreign import _elementFind :: String -> Element -> Effect Foreign
+foreign import _elementFindWithNS :: String -> String -> Element -> Effect Foreign
 foreign import elementReplaceWithElement :: Element -> Element -> Effect Unit
 foreign import elementReplaceWithText :: String -> Element -> Effect Unit
 foreign import elementPath :: Element -> Effect String
+foreign import elementDefineNS :: String -> Element -> Effect NameSpace
+foreign import elementDefineNSwithPrefix :: String -> String -> Element -> Effect NameSpace
+foreign import _elementNS :: Element -> Effect (Nullable NameSpace)
+foreign import elementSetNS :: NameSpace -> Element -> Effect Unit
+foreign import elementSetNShref :: String -> Element -> Effect Unit
+foreign import elementSetNShrefWithPrefix :: String -> String -> Element -> Effect Unit
+foreign import elementClearNS :: Element -> Effect Unit
+foreign import elementAllNS :: Element -> Effect (Array NameSpace)
+
 
 newElement :: Document -> String -> String -> Effect Element
 newElement doc name content = runEffectFn3 _newElement doc name content
@@ -88,6 +107,13 @@ elementFind xpath elem = do
     f <- readNullOrUndefined foreignResult
     traverse readXPathResult $ f
 
+elementFindWithNS :: String -> String -> Element -> Effect (Maybe XPathResult)
+elementFindWithNS xpath href elem = do
+  foreignResult <- _elementFindWithNS xpath href elem
+  pure $ unsafePartial fromRight $ runExcept do
+    f <- readNullOrUndefined foreignResult
+    traverse readXPathResult $ f
+
 readXPathResult :: Foreign -> F XPathResult
 readXPathResult f = (NumberResult <$> readNumber f)
                     <|> (StringResult <$> readString f)
@@ -99,3 +125,6 @@ readNode f = pure $ unsafeFromForeign f
 
 readNodeSet :: Foreign -> F (Array (Node Unit))
 readNodeSet f = traverse readNode =<< readArray f
+
+elementNS :: Element -> Effect (Maybe NameSpace)
+elementNS element = toMaybe <$> _elementNS element

@@ -1,5 +1,6 @@
 module Libxml.Types
        ( Document
+       , NameSpace
        , Node
        , Element
        , Comment
@@ -27,6 +28,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 
 foreign import data Document :: Type
+foreign import data NameSpace :: Type
 
 foreign import data RawNode :: Type -> Type
 foreign import data RawElementNode :: Type

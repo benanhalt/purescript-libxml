@@ -6,6 +6,7 @@ module Libxml.Document
        , docSetRoot
        , docCreateRoot
        , docFind
+       , docFindWithNS
        , docGetElement
        , docGetAttr
        , docEncoding
@@ -20,16 +21,11 @@ where
 import Libxml.Types
 import Prelude
 
-import Data.Array (head)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toMaybe)
-import Data.Traversable (sequence, traverse)
 import Effect (Effect)
-import Effect.Console (log)
 import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn3, runEffectFn1, runEffectFn2, runEffectFn3)
-import Libxml.Element (elementFind, elementGetAttr, elementGetElement)
-import Libxml.Node (asElement)
-import Prelude (Unit, void, ($), (<$>))
+import Libxml.Element (elementFind, elementFindWithNS, elementGetAttr, elementGetElement)
 
 
 type DocEncodingAndVersion = {encoding :: String, version :: String}
@@ -79,3 +75,8 @@ docFind :: String -> Document -> Effect (Maybe XPathResult)
 docFind xpath doc = docGetRoot doc >>= case _ of
   Nothing -> pure Nothing
   Just root -> elementFind xpath root
+
+docFindWithNS :: String -> String -> Document -> Effect (Maybe XPathResult)
+docFindWithNS xpath href doc = docGetRoot doc >>= case _ of
+  Nothing -> pure Nothing
+  Just root -> elementFindWithNS xpath href root

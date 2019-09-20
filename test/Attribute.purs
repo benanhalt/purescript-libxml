@@ -5,13 +5,14 @@ import Prelude
 
 import Data.Either (fromRight)
 import Data.Maybe (Maybe(..), fromJust, isNothing)
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (elem, sequence, traverse)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Libxml (parseXmlString)
-import Libxml.Attribute (attrName, attrNextSibling, attrNode, attrPrevSibling, attrSetValue, attrValue)
+import Libxml.Attribute (attrName, attrNameSpace, attrNextSibling, attrNode, attrPrevSibling, attrSetNameSpace, attrSetValue, attrValue)
 import Libxml.Document (docGetElement)
 import Libxml.Element (elementAttr, elementName, elementSetAttr)
+import Libxml.NameSpace (href, prefix)
 import Libxml.Node (nodeRemove, nodeType)
 import Partial.Unsafe (unsafePartial)
 import Test.Unit (TestSuite, failure, test, testSkip)
@@ -35,8 +36,16 @@ attributeTest = do
       attr <- elementAttr "new-attr-key" node
       sequence $ attrValue <$> attr
 
-  testSkip "create with namespace" do
-    failure "not implemented"
+  -- I think this is broken in libxmljs
+  testSkip "create with namespace" $ unsafePartial do
+    doc <- liftEffect $ fromRight <$> parseXmlString body
+    (Just node) <- liftEffect $ docGetElement "node" doc
+    liftEffect $ elementSetAttr "new-attr-key" "new-attr-value" node
+    (Just attr) <- liftEffect $ elementAttr "new-attr-key" node
+    liftEffect $ attrSetNameSpace "ns-prefix" "ns-url" attr
+    (Just ns) <- liftEffect $ attrNameSpace attr
+    Assert.equal (Just "ns-prefix") $ prefix ns
+    Assert.equal "ns-url" $ href ns
 
   test "getters" do
     node <- liftEffect do

@@ -7,11 +7,13 @@ import Libxml.Types
 import Prelude
 
 import Data.Array (head, index, length)
-import Data.Either (fromRight)
+import Data.Either (Either(..), fromRight)
 import Data.Maybe (Maybe(..), fromJust, isJust, isNothing)
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (for_, sequence, traverse)
 import Effect.Class (liftEffect)
 import Libxml (parseXmlString)
+import Libxml.Attribute (attrName, attrNameSpace)
+import Libxml.NameSpace (href, prefix)
 import Libxml.Text (newText, textGetText)
 import Partial.Unsafe (unsafePartial)
 import Test.Unit (TestSuite, failure, suite, test, testSkip)
@@ -197,8 +199,22 @@ elementTest = do
       pure $ string == string2
     Assert.assert "toStrings are equal" stringsEqual
 
-  testSkip "namespace" do
-    failure "not implemented"
+  test "namespace" $ unsafePartial do
+    let xml = """<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:bacon="http://www.example.com/fake/uri"><node bacon:attr-with-ns="attr-with-ns-value" attr-without-ns="attr-withoug-ns-vavlue" /></root>"""
+
+    (Right doc) <- liftEffect $ parseXmlString xml
+    (Just node) <- liftEffect $ docGetElement "node" doc
+    attrs <- liftEffect $ elementAttrs node
+    for_ attrs \attr -> do
+      let name = attrName attr
+      ns <- liftEffect $ attrNameSpace attr
+      if name == "attr-with-ns" then do
+        Assert.equal (Just (Just "bacon")) $ prefix <$> ns
+        Assert.equal (Just "http://www.example.com/fake/uri") $ href <$> ns
+      else do
+        Assert.equal "attr-without-ns" name
+        Assert.assert "namespace should be Nothing" $ isNothing ns
 
   suite "replace" do
     let xml = "<foo>some <bar/> evening</foo>"
